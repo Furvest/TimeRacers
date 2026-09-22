@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-
+// настройки управления машиной бибиб
 public class drive : MonoBehaviour
 {
     [Header("Скорость")]
