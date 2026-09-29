@@ -1,18 +1,18 @@
-using UnityEngine;
+п»їusing UnityEngine;
 
 public class CarCamera : MonoBehaviour
 {
-    [Header("Цель")]
-    public Transform target;                 // CameraTarget внутри машины
+    [Header("С†РµР»СЊ")]
+    public Transform target;                 // CameraTarget РІРЅСѓС‚СЂРё РјР°С€РёРЅС‹
 
-    [Header("Смещение")]
-    public Vector3 offset = new Vector3(0f, 0f, -10f); // Z всегда -10
+    [Header("РЎРјРµС‰РµРЅРёРµ")]
+    public Vector3 offset = new Vector3(0f, 0f, -10f); // Z РІСЃРµРіРґР° -10
 
-    [Header("Плавность")]
-    [Tooltip("3-4 — плавно и кинематографично, 8-10 — резко")]
+    [Header("РџР»Р°РІРЅРѕСЃС‚СЊ")]
+    [Tooltip("3-4 вЂ” РїР»Р°РІРЅРѕ Рё РєРёРЅРµРјР°С‚РѕРіСЂР°С„РёС‡РЅРѕ, 8-10 вЂ” СЂРµР·РєРѕ")]
     public float smooth = 5f;
 
-    [Header("Забегание вперёд")]
+    [Header("Р—Р°Р±РµРіР°РЅРёРµ РІРїРµСЂС‘Рґ")]
     public bool lookAhead = true;
     public float lookAheadDistance = 1.5f;
 
@@ -29,17 +29,17 @@ public class CarCamera : MonoBehaviour
     {
         if (target == null) return;
 
-        // Направление движения машины (по разнице позиций)
+        // РќР°РїСЂР°РІР»РµРЅРёРµ РґРІРёР¶РµРЅРёСЏ РјР°С€РёРЅС‹ (РїРѕ СЂР°Р·РЅРёС†Рµ РїРѕР·РёС†РёР№)
         Vector3 moveDir = (target.position - lastTargetPos).normalized;
         lastTargetPos = target.position;
 
         Vector3 desiredPos = target.position + offset;
 
-        // Забегаем чуть вперёд по ходу движения
+        // Р—Р°Р±РµРіР°РµРј С‡СѓС‚СЊ РІРїРµСЂС‘Рґ РїРѕ С…РѕРґСѓ РґРІРёР¶РµРЅРёСЏ
         if (lookAhead && moveDir.sqrMagnitude > 0.0001f)
             desiredPos += moveDir * lookAheadDistance;
 
-        // Плавно двигаем камеру
+        // РџР»Р°РІРЅРѕ РґРІРёРіР°РµРј РєР°РјРµСЂСѓ
         transform.position = Vector3.SmoothDamp(
             transform.position,
             desiredPos,
@@ -47,7 +47,7 @@ public class CarCamera : MonoBehaviour
             1f / smooth
         );
 
-        // Камера всегда смотрит ровно (без поворота) — для top-down это правильно
+        // РљР°РјРµСЂР° РІСЃРµРіРґР° СЃРјРѕС‚СЂРёС‚ СЂРѕРІРЅРѕ (Р±РµР· РїРѕРІРѕСЂРѕС‚Р°) вЂ” РґР»СЏ top-down СЌС‚Рѕ РїСЂР°РІРёР»СЊРЅРѕ
         transform.rotation = Quaternion.identity;
     }
 }
