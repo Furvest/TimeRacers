@@ -4,7 +4,9 @@
 TagManager:
   serializedVersion: 3
   tags:
-  - MidTrigger
+  - Mid1
+  - Mid2
+  - Mid3
   - FinishLine
   layers:
   - Default

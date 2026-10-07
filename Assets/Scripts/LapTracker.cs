@@ -4,6 +4,8 @@ using UnityEngine;
 public class LapTracker : MonoBehaviour
 {
     [SerializeField] private int totalLaps = 3;
+    [SerializeField] private string[] checkpointOrder = { "Mid1", "Mid2", "Mid3" };
+    [SerializeField] private string finishTag = "FinishLine";
 
     public int CurrentLap { get; private set; } = 0;
     public int TotalLaps => totalLaps;
@@ -11,20 +13,16 @@ public class LapTracker : MonoBehaviour
     public float CurrentLapTime => currentLapTime;
     public IReadOnlyList<float> LapTimes => lapTimes;
 
-    // События для UI
-    public event System.Action<int, int> OnLapChanged;   // (текущий, всего)
-    public event System.Action<int, float> OnLapFinished; // (номер круга, время)
+    public event System.Action<int, int> OnLapChanged;
+    public event System.Action<int, float> OnLapFinished;
 
-    private readonly List<float> lapTimes = new();  // времена последних кругов
-    private bool passedMid = false;
+    private readonly List<float> lapTimes = new();
+    private int nextCheckpoint = 0;
     private float raceTimer = 0f;
     private float currentLapTime = 0f;
     private bool raceFinished = false;
 
-    void Start()
-    {
-        OnLapChanged?.Invoke(CurrentLap, totalLaps);
-    }
+    void Start() => OnLapChanged?.Invoke(CurrentLap, totalLaps);
 
     void Update()
     {
@@ -35,24 +33,32 @@ public class LapTracker : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("MidTrigger"))
+        if (raceFinished) return;
+
+        // Следующий ожидаемый чекпоинт
+        if (nextCheckpoint < checkpointOrder.Length &&
+            other.CompareTag(checkpointOrder[nextCheckpoint]))
         {
-            passedMid = true;
+            Debug.Log($"[LapTracker] Чекпоинт {checkpointOrder[nextCheckpoint]} пройден.");
+            nextCheckpoint++;
             return;
         }
 
-        if (other.CompareTag("FinishLine"))
+        // Финиш
+        if (other.CompareTag(finishTag))
         {
-            if (!passedMid) return;
+            if (nextCheckpoint < checkpointOrder.Length)
+            {
+                Debug.Log("[LapTracker] Финиш не засчитан — не все чекпоинты пройдены.");
+                return;
+            }
 
             CurrentLap++;
-            passedMid = false;
-
-            // Сохраняем время круга, держим максимум 3
             lapTimes.Add(currentLapTime);
             if (lapTimes.Count > 3) lapTimes.RemoveAt(0);
             OnLapFinished?.Invoke(CurrentLap, currentLapTime);
             currentLapTime = 0f;
+            nextCheckpoint = 0;
 
             OnLapChanged?.Invoke(CurrentLap, totalLaps);
             Debug.Log($"[LapTracker] КРУГ {CurrentLap}/{totalLaps} — {lapTimes[^1]:F2} сек");
@@ -60,7 +66,7 @@ public class LapTracker : MonoBehaviour
             if (CurrentLap >= totalLaps)
             {
                 raceFinished = true;
-                Debug.Log($"[LapTracker] ФИНИШ! Общее время: {raceTimer:F2} сек");
+                Debug.Log($"[LapTracker] 🏁 ФИНИШ! Общее время: {raceTimer:F2} сек");
             }
         }
     }
