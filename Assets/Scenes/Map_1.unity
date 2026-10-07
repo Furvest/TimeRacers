@@ -2340,8 +2340,8 @@ GameObject:
   - component: {fileID: 172012224}
   - component: {fileID: 172012227}
   - component: {fileID: 172012226}
-  - component: {fileID: 172012228}
   - component: {fileID: 172012229}
+  - component: {fileID: 172012228}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Player
@@ -29029,7 +29029,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 0.59607846, g: 0.11348517, b: 0.9547169, a: 1}
+  m_Color: {r: 0.59607846, g: 0.11348517, b: 0.9547169, a: 0.54509807}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

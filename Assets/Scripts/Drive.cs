@@ -27,12 +27,9 @@ public class Drive : MonoBehaviour
     {
         controls = new CarControls();
         rb = GetComponent<Rigidbody2D>();
-
-        // Важно: физика сама не должна крутить и толкать машину —
-        // за это отвечает наш код через MovePosition / MoveRotation
         rb.gravityScale = 0f;
-        rb.freezeRotation = true;    // запретить физике вращать тело
-        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // ← ключ к стенам
+        rb.freezeRotation = true;    // запрет физике вращать тело
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // чтобы проверять столкновение со стенами
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
     }
 
