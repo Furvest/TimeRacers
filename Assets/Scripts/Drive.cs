@@ -25,12 +25,15 @@ public class Drive : MonoBehaviour
     [SerializeField] private float driftDragMultiplier = 0.3f;
 
     [Header("Буст")]
-    [SerializeField] private float boostMultiplier = 1.8f;
     [SerializeField] private float boostDuration = 2f;
+    [SerializeField] private float boostSpeedMultiplier = 1.2f;        // +20% к скорости
+    [SerializeField] private float boostAccelerationMultiplier = 1.5f; // +50% к ускорению
+    [SerializeField] private float boostImpulse = 2f;                  // мгновенный рывок
 
     [Header("Debug")]
     [SerializeField] private bool logStateChanges = true;
-
+    
+    public bool InputEnabled { get; set; } = true;
     public CarState State { get; private set; } = CarState.Stopped;
     public event System.Action<CarState, CarState> OnStateChanged;
 
@@ -56,6 +59,14 @@ public class Drive : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (!InputEnabled)
+        {
+        // Машина стоит перед стартом да
+        velocity = Vector2.zero;
+        rb.MovePosition(rb.position);
+        SetState(CarState.Stopped);
+        return;
+        }
         float move  = controls.Car.Move.ReadValue<float>();
         float steer = controls.Car.Steer.ReadValue<float>();
         bool  drift = controls.Car.Drift.IsPressed();
@@ -70,15 +81,19 @@ public class Drive : MonoBehaviour
         float fwd = Vector2.Dot(velocity, forward);
         float lat = Vector2.Dot(velocity, right);
 
-        // === Поворот: только если машина движется ===
+        //Поворот только если машина движется
         float speedFactor = Mathf.Clamp01(Mathf.Abs(fwd) / minTurnSpeed);
         float turnAmount  = -steer * turnSpeed * turnBoost * speedFactor * Time.fixedDeltaTime;
         rb.MoveRotation(rb.rotation + turnAmount);
 
-        // === Продольная составляющая ===
+        //Продольная составляющая
+        float currentAccel = (State == CarState.Boosting)
+            ? acceleration * boostAccelerationMultiplier
+            : acceleration;
+
         if (move > 0f)
         {
-            fwd += acceleration * Time.fixedDeltaTime;
+            fwd += currentAccel * Time.fixedDeltaTime;
             fwd = Mathf.Min(fwd, speedLimit);
         }
         else if (move < 0f)
@@ -129,7 +144,7 @@ public class Drive : MonoBehaviour
         switch (State)
         {
             case CarState.Boosting:
-                speedLimit = moveSpeed * boostMultiplier;
+                speedLimit = moveSpeed * boostSpeedMultiplier;
                 grip = normalGrip; turnBoost = 1f; break;
             case CarState.Drifting:
                 speedLimit = moveSpeed;
@@ -144,7 +159,9 @@ public class Drive : MonoBehaviour
     }
 
     public void ApplyBoost(float duration = -1f)
-        => boostTimer = (duration > 0f) ? duration : boostDuration;
-
+    {
+        boostTimer = (duration > 0f) ? duration : boostDuration;
+        velocity += (Vector2)rb.transform.up * boostImpulse;
+    }
     void OnCollisionEnter2D(Collision2D col) => velocity = Vector2.zero;
 }

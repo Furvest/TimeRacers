@@ -8,6 +8,8 @@ TagManager:
   - Mid2
   - Mid3
   - FinishLine
+  - GhostPast
+  - GhostFuture
   layers:
   - Default
   - TransparentFX
