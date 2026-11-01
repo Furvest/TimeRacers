@@ -18,6 +18,7 @@ public class Drive : MonoBehaviour
     [SerializeField] private float turnSpeed = 120f;
     [SerializeField] private float driftTurnBoost = 1.5f;
     [SerializeField] private float minTurnSpeed = 0.3f;   // скорость, с которой начинается поворот
+    [SerializeField] private float rwdOversteer = 60f; // угол, на который задняя ось может "сносить" машину при повороте
 
     [Header("Сцепление")]
     [SerializeField] private float normalGrip = 12f;
@@ -47,6 +48,8 @@ public class Drive : MonoBehaviour
     private Vector2 velocity;
     private float boostTimer;
     private float speedLimit, grip, turnBoost;
+    private bool isTouchingWall = false;
+    private Vector2 wallNormal;
 
     void Awake()
     {
@@ -64,14 +67,15 @@ public class Drive : MonoBehaviour
 
     void FixedUpdate()
     {
+        //блокировка ввода до старта
         if (!InputEnabled)
         {
-        // Машина стоит перед стартом да
-        velocity = Vector2.zero;
-        rb.MovePosition(rb.position);
-        SetState(CarState.Stopped);
-        return;
+            velocity = Vector2.zero; 
+            SetState(CarState.Stopped);
+            return;
         }
+
+        // чтение ввода
         float move  = controls.Car.Move.ReadValue<float>();
         float steer = controls.Car.Steer.ReadValue<float>();
         bool  drift = controls.Car.Drift.IsPressed();
@@ -81,17 +85,25 @@ public class Drive : MonoBehaviour
         SetState(DetermineState(move, drift));
         ApplyParams();
 
+        //оси машины
         Vector2 forward = rb.transform.up;
         Vector2 right   = rb.transform.right;
         float fwd = Vector2.Dot(velocity, forward);
         float lat = Vector2.Dot(velocity, right);
 
-        //Поворот только если машина движется
+        //поворот только если машина движется да
         float speedFactor = Mathf.Clamp01(Mathf.Abs(fwd) / minTurnSpeed);
         float turnAmount  = -steer * turnSpeed * turnBoost * speedFactor * Time.fixedDeltaTime;
+
+        //эффекты заднего привода
+        if (move > 0f && Mathf.Abs(steer) > 0.1f && Mathf.Abs(fwd) > 1f)
+        {
+            float speedRatio = Mathf.Clamp01(Mathf.Abs(fwd) / speedLimit);
+            turnAmount += -steer * rwdOversteer * speedRatio * Time.fixedDeltaTime;
+        }
         rb.MoveRotation(rb.rotation + turnAmount);
 
-        //Продольная составляющая
+        //продольная составляющая (разгон/тормоз/задний ход)
         float currentAccel = (State == CarState.Boosting)
             ? acceleration * boostAccelerationMultiplier
             : acceleration;
@@ -103,7 +115,6 @@ public class Drive : MonoBehaviour
         }
         else if (move < 0f)
         {
-            // S: сначала тормоз до нуля, потом задний ход
             if (fwd > 0.05f)
                 fwd = Mathf.MoveTowards(fwd, 0f, brakeDeceleration * Time.fixedDeltaTime);
             else
@@ -118,10 +129,24 @@ public class Drive : MonoBehaviour
             fwd = Mathf.MoveTowards(fwd, 0f, d * Time.fixedDeltaTime);
         }
 
-        // Поперечная
+        //поперечная составляющая (сцепление шин)
         lat *= Mathf.Exp(-grip * Time.fixedDeltaTime);
 
+        //собираем вектор скорости
         velocity = forward * fwd + right * lat;
+
+        //касания со стенами
+        if (isTouchingWall)
+        {
+            float normalVelocity = Vector2.Dot(velocity, wallNormal);
+            
+            if (normalVelocity < 0f)
+            {
+                velocity -= normalVelocity * wallNormal;
+                velocity *= 0.98f; 
+            }
+        }
+        //движение
         rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
     }
 
@@ -168,7 +193,24 @@ public class Drive : MonoBehaviour
         boostTimer = (duration > 0f) ? duration : boostDuration;
         velocity += (Vector2)rb.transform.up * boostImpulse;
     }
-    void OnCollisionEnter2D(Collision2D col) => velocity = Vector2.zero;
+
+    void OnCollisionEnter2D(Collision2D col)
+    {
+        //при первом ударе теряем 40% скорости (глухой удар)
+        velocity *= 0.6f;
+    }
+    void OnCollisionStay2D(Collision2D col)
+    {
+        if (col.contactCount == 0) return;
+        
+        //запоминаем нормаль стены и ставим флаг, что мы её касаемся
+        isTouchingWall = true;
+        wallNormal = col.contacts[0].normal;
+    }
+    void OnCollisionExit2D(Collision2D col)
+    {
+        isTouchingWall = false;
+    }
 
     void OnGUI()
     {
