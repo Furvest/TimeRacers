@@ -7,6 +7,7 @@ public class RaceStart : MonoBehaviour
 {
     [SerializeField] private Drive car;
     [SerializeField] private TMP_Text countdownLabel;
+    [SerializeField] private LapTracker lapTracker;
 
     [SerializeField] private float countStepTime = 1f;   // время на каждую цифру
     [SerializeField] private float perfectWindow = 0.3f; // окно PERFECT после GO
@@ -38,7 +39,7 @@ public class RaceStart : MonoBehaviour
         goTime = Time.time;
         car.InputEnabled = true;
         canPress = true;
-
+        if (lapTracker != null) lapTracker.StartTimer();
         yield return new WaitForSeconds(goodWindow);
         canPress = false;
 

@@ -24,9 +24,19 @@ public class LapTracker : MonoBehaviour
 
     void Start() => OnLapChanged?.Invoke(CurrentLap, totalLaps);
 
+    private bool raceStarted = false;
+
+    public void StartTimer()
+    {
+        raceStarted = true;
+        raceTimer = 0f;
+        currentLapTime = 0f;
+    }
+
     void Update()
     {
-        if (raceFinished) return;
+        if (!raceStarted || raceFinished) return; // Ждём команды старта
+        
         raceTimer += Time.deltaTime;
         currentLapTime += Time.deltaTime;
     }
