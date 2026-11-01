@@ -124,7 +124,7 @@ public partial class @CarControls: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""f90c7788-2645-4d82-9dd3-958668f50f1e"",
-                    ""path"": ""<Keyboard>/leftShift"",
+                    ""path"": ""<Keyboard>/space"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
