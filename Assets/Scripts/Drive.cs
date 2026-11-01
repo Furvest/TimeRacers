@@ -30,6 +30,11 @@ public class Drive : MonoBehaviour
     [SerializeField] private float boostAccelerationMultiplier = 1.5f; // +50% к ускорению
     [SerializeField] private float boostImpulse = 2f;                  // мгновенный рывок
 
+    [Header("State UI")]
+    [SerializeField] private bool showStateOnScreen = true;
+    [SerializeField] private Vector2 stateLabelPosition = new Vector2(20, 20);
+    [SerializeField] private int stateLabelFontSize = 28;
+
     [Header("Debug")]
     [SerializeField] private bool logStateChanges = true;
     
@@ -164,4 +169,19 @@ public class Drive : MonoBehaviour
         velocity += (Vector2)rb.transform.up * boostImpulse;
     }
     void OnCollisionEnter2D(Collision2D col) => velocity = Vector2.zero;
+
+    void OnGUI()
+    {
+        if (!showStateOnScreen) return;
+
+        var style = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = stateLabelFontSize,
+            fontStyle = FontStyle.Bold,
+        };
+        GUI.Label(
+            new Rect(stateLabelPosition.x, stateLabelPosition.y, 300, 50),
+            State.ToString(),
+            style);
+    }
 }
