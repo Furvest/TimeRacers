@@ -3978,6 +3978,7 @@ MonoBehaviour:
   turnSpeed: 120
   driftTurnBoost: 1
   minTurnSpeed: 1
+  rwdOversteer: 45
   normalGrip: 13
   driftGrip: 1.5
   driftDragMultiplier: 0.3
@@ -3985,7 +3986,13 @@ MonoBehaviour:
   boostSpeedMultiplier: 1.5
   boostAccelerationMultiplier: 2
   boostImpulse: 4
+  showStateOnScreen: 1
+  stateLabelPosition: {x: 220, y: 20}
+  stateLabelFontSize: 28
   logStateChanges: 1
+  currentSpeed: 0
+  currentLateralSpeed: 0
+  isDrifting: 0
 --- !u!50 &141706543
 Rigidbody2D:
   serializedVersion: 5
@@ -4079,7 +4086,7 @@ Transform:
   m_GameObject: {fileID: 141706539}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 10.4, y: 2, z: 0}
+  m_LocalPosition: {x: 10.43, y: 2, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -11379,6 +11386,63 @@ MonoBehaviour:
   m_SelectedFaces: 
   m_SelectedEdges: []
   m_SelectedVertices: 
+--- !u!1001 &428155525
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6357770287262977177, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_Name
+      value: Circle
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -15.705603
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -10.530819
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8155754574939963407, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 60f327faa1b9e174ab5dd49217a3281c, type: 3}
 --- !u!43 &428955485
 Mesh:
   m_ObjectHideFlags: 0
@@ -16101,6 +16165,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RaceStart
   car: {fileID: 141706542}
   countdownLabel: {fileID: 1353645224}
+  lapTracker: {fileID: 141706541}
   countStepTime: 1
   perfectWindow: 0.3
   goodWindow: 0.8
@@ -21742,7 +21807,7 @@ GameObject:
   - component: {fileID: 993811339}
   - component: {fileID: 993811342}
   - component: {fileID: 993811341}
-  - component: {fileID: 993811340}
+  - component: {fileID: 993811343}
   m_Layer: 0
   m_Name: Sphere
   m_TagString: Untagged
@@ -21765,27 +21830,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 141706546}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &993811340
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 993811338}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &993811341
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -21843,6 +21887,33 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 993811338}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!50 &993811343
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 993811338}
+  m_BodyType: 1
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 0.0001
+  m_LinearDamping: 0
+  m_AngularDamping: 0
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 0
 --- !u!1 &1002227029
 GameObject:
   m_ObjectHideFlags: 0
@@ -39168,3 +39239,4 @@ SceneRoots:
   - {fileID: 1299869535}
   - {fileID: 1410613860}
   - {fileID: 984673504}
+  - {fileID: 428155525}
