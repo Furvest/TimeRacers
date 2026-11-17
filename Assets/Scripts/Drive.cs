@@ -17,8 +17,8 @@ public class Drive : MonoBehaviour
     [Header("Поворот")]
     [SerializeField] private float turnSpeed = 120f;
     [SerializeField] private float driftTurnBoost = 1.5f;
-    [SerializeField] private float minTurnSpeed = 0.3f;   // скорость, с которой начинается поворот
-    [SerializeField] private float rwdOversteer = 60f; // угол, на который задняя ось может "сносить" машину при повороте
+    [SerializeField] private float minTurnSpeed = 0.3f;   
+    [SerializeField] private float rwdOversteer = 60f; 
 
     [Header("Сцепление")]
     [SerializeField] private float normalGrip = 12f;
@@ -27,9 +27,9 @@ public class Drive : MonoBehaviour
 
     [Header("Буст")]
     [SerializeField] private float boostDuration = 2f;
-    [SerializeField] private float boostSpeedMultiplier = 1.2f;        // +20% к скорости
-    [SerializeField] private float boostAccelerationMultiplier = 1.5f; // +50% к ускорению
-    [SerializeField] private float boostImpulse = 2f;                  // мгновенный рывок
+    [SerializeField] private float boostSpeedMultiplier = 1.2f;        
+    [SerializeField] private float boostAccelerationMultiplier = 1.5f; 
+    [SerializeField] private float boostImpulse = 2f;                  
 
     [Header("State UI")]
     [SerializeField] private bool showStateOnScreen = true;
@@ -42,6 +42,16 @@ public class Drive : MonoBehaviour
     public bool InputEnabled { get; set; } = true;
     public CarState State { get; private set; } = CarState.Stopped;
     public event System.Action<CarState, CarState> OnStateChanged;
+
+    [Header("Отладочная информация (только чтение)")]
+    [SerializeField] private float currentSpeed;
+    [SerializeField] private float currentLateralSpeed;
+    [SerializeField] private bool isDrifting;
+
+    //публичные свойства для чтения редактором
+    public float CurrentSpeed => currentSpeed;
+    public float CurrentLateralSpeed => currentLateralSpeed;
+    public bool IsDrifting => isDrifting;
 
     private CarControls controls;
     private Rigidbody2D rb;
@@ -91,7 +101,7 @@ public class Drive : MonoBehaviour
         float fwd = Vector2.Dot(velocity, forward);
         float lat = Vector2.Dot(velocity, right);
 
-        //поворот только если машина движется да
+        //поворот только если машина движется
         float speedFactor = Mathf.Clamp01(Mathf.Abs(fwd) / minTurnSpeed);
         float turnAmount  = -steer * turnSpeed * turnBoost * speedFactor * Time.fixedDeltaTime;
 
@@ -148,6 +158,11 @@ public class Drive : MonoBehaviour
         }
         //движение
         rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
+
+        // --- ИСПРАВЛЕНО: данные для отладки ---
+        currentSpeed = fwd;
+        currentLateralSpeed = lat;
+        isDrifting = drift;
     }
 
     CarState DetermineState(float move, bool drift)
@@ -166,7 +181,7 @@ public class Drive : MonoBehaviour
         CarState prev = State;
         State = next;
         OnStateChanged?.Invoke(prev, next);
-        if (logStateChanges) Debug.Log($"[drive] {prev} → {next}");
+        if (logStateChanges) Debug.Log($"[Drive] {prev} → {next}");
     }
 
     void ApplyParams()
@@ -196,14 +211,11 @@ public class Drive : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D col)
     {
-        //при первом ударе теряем 40% скорости (глухой удар)
         velocity *= 0.6f;
     }
     void OnCollisionStay2D(Collision2D col)
     {
         if (col.contactCount == 0) return;
-        
-        //запоминаем нормаль стены и ставим флаг, что мы её касаемся
         isTouchingWall = true;
         wallNormal = col.contacts[0].normal;
     }
@@ -225,5 +237,23 @@ public class Drive : MonoBehaviour
             new Rect(stateLabelPosition.x, stateLabelPosition.y, 300, 50),
             State.ToString(),
             style);
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return;
+
+        // Вектор скорости (синий)
+        Gizmos.color = Color.blue;
+        Gizmos.DrawRay(transform.position, (Vector3)velocity);
+
+        // Вектор направления "носа" (зелёный)
+        Gizmos.color = Color.green;
+        Gizmos.DrawRay(transform.position, transform.up * 2f);
+
+        // Визуализация бокового скольжения (красный)
+        Gizmos.color = Color.red;
+        Vector2 lateral = transform.right * currentLateralSpeed;
+        Gizmos.DrawRay(transform.position, (Vector3)lateral);
     }
 }
