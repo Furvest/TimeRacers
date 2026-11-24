@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6b0daac91975714d91ba160cbe95206, type: 3}
+  m_Name: CarConfig_Temp
+  m_EditorClassIdentifier: Assembly-CSharp::CarStats
+  moveSpeed: 34
+  reverseSpeed: 7
+  acceleration: 12
+  reverseAcceleration: 8
+  brakeDeceleration: 20
+  drag: 2
+  turnSpeed: 60
+  driftTurnBoost: 1.5
+  minTurnSpeed: 0.3
+  rwdOversteer: 60
+  normalGrip: 12
+  driftGrip: 1.5
+  driftDragMultiplier: 0.3
+  boostDuration: 2
+  boostSpeedMultiplier: 1.6
+  boostAccelerationMultiplier: 2
+  boostImpulse: 2.5
+  showStateOnScreen: 1
+  stateLabelPosition: {x: 20, y: 20}
+  stateLabelFontSize: 28
+  logStateChanges: 1
