@@ -6,38 +6,10 @@ public enum CarState { Stopped, Normal, Drifting, Boosting, Reverse, Paradox }
 [RequireComponent(typeof(Rigidbody2D))]
 public class Drive : MonoBehaviour
 {
-    [Header("Скорость")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float reverseSpeed = 2.5f;
-    [SerializeField] private float acceleration = 12f;
-    [SerializeField] private float reverseAcceleration = 8f;
-    [SerializeField] private float brakeDeceleration = 20f;
-    [SerializeField] private float drag = 2f;
-
-    [Header("Поворот")]
-    [SerializeField] private float turnSpeed = 120f;
-    [SerializeField] private float driftTurnBoost = 1.5f;
-    [SerializeField] private float minTurnSpeed = 0.3f;   
-    [SerializeField] private float rwdOversteer = 60f; 
-
-    [Header("Сцепление")]
-    [SerializeField] private float normalGrip = 12f;
-    [SerializeField] private float driftGrip = 1.5f;
-    [SerializeField] private float driftDragMultiplier = 0.3f;
-
-    [Header("Буст")]
-    [SerializeField] private float boostDuration = 2f;
-    [SerializeField] private float boostSpeedMultiplier = 1.2f;        
-    [SerializeField] private float boostAccelerationMultiplier = 1.5f; 
-    [SerializeField] private float boostImpulse = 2f;                  
-
-    [Header("State UI")]
-    [SerializeField] private bool showStateOnScreen = true;
-    [SerializeField] private Vector2 stateLabelPosition = new Vector2(20, 20);
-    [SerializeField] private int stateLabelFontSize = 28;
-
-    [Header("Debug")]
-    [SerializeField] private bool logStateChanges = true;
+    [Header("Конфигурация")]
+    [Tooltip("Ссылка на ассет с настройками машины")]
+    [SerializeField] private CarStats stats; 
+    public CarStats Stats => stats;
     
     public bool InputEnabled { get; set; } = true;
     public CarState State { get; private set; } = CarState.Stopped;
@@ -48,7 +20,7 @@ public class Drive : MonoBehaviour
     [SerializeField] private float currentLateralSpeed;
     [SerializeField] private bool isDrifting;
 
-    //публичные свойства для чтения редактором
+    // Публичные свойства для чтения из окна редактора
     public float CurrentSpeed => currentSpeed;
     public float CurrentLateralSpeed => currentLateralSpeed;
     public bool IsDrifting => isDrifting;
@@ -56,6 +28,8 @@ public class Drive : MonoBehaviour
     private CarControls controls;
     private Rigidbody2D rb;
     private Vector2 velocity;
+    
+    // Переменные состояния (вычисляются на лету)
     private float boostTimer;
     private float speedLimit, grip, turnBoost;
     private bool isTouchingWall = false;
@@ -63,20 +37,32 @@ public class Drive : MonoBehaviour
 
     void Awake()
     {
+        if (stats == null)
+        {
+            Debug.LogError($"[{gameObject.name}] Не назначен CarStats! Машина не будет двигаться.");
+            return;
+        }
+
         controls = new CarControls();
         rb = GetComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
-        speedLimit = moveSpeed; grip = normalGrip; turnBoost = 1f;
+        
+        // Инициализируем текущие параметры из конфига
+        speedLimit = stats.moveSpeed; 
+        grip = stats.normalGrip; 
+        turnBoost = 1f;
     }
 
-    void OnEnable()  => controls.Car.Enable();
-    void OnDisable() => controls.Car.Disable();
+    void OnEnable()  { if (controls != null) controls.Car.Enable(); }
+    void OnDisable() { if (controls != null) controls.Car.Disable(); }
 
     void FixedUpdate()
     {
+        if (stats == null) return;
+
         //блокировка ввода до старта
         if (!InputEnabled)
         {
@@ -102,21 +88,21 @@ public class Drive : MonoBehaviour
         float lat = Vector2.Dot(velocity, right);
 
         //поворот только если машина движется
-        float speedFactor = Mathf.Clamp01(Mathf.Abs(fwd) / minTurnSpeed);
-        float turnAmount  = -steer * turnSpeed * turnBoost * speedFactor * Time.fixedDeltaTime;
+        float speedFactor = Mathf.Clamp01(Mathf.Abs(fwd) / stats.minTurnSpeed);
+        float turnAmount  = -steer * stats.turnSpeed * turnBoost * speedFactor * Time.fixedDeltaTime;
 
         //эффекты заднего привода
         if (move > 0f && Mathf.Abs(steer) > 0.1f && Mathf.Abs(fwd) > 1f)
         {
             float speedRatio = Mathf.Clamp01(Mathf.Abs(fwd) / speedLimit);
-            turnAmount += -steer * rwdOversteer * speedRatio * Time.fixedDeltaTime;
+            turnAmount += -steer * stats.rwdOversteer * speedRatio * Time.fixedDeltaTime;
         }
         rb.MoveRotation(rb.rotation + turnAmount);
 
         //продольная составляющая (разгон/тормоз/задний ход)
         float currentAccel = (State == CarState.Boosting)
-            ? acceleration * boostAccelerationMultiplier
-            : acceleration;
+            ? stats.acceleration * stats.boostAccelerationMultiplier
+            : stats.acceleration;
 
         if (move > 0f)
         {
@@ -126,16 +112,16 @@ public class Drive : MonoBehaviour
         else if (move < 0f)
         {
             if (fwd > 0.05f)
-                fwd = Mathf.MoveTowards(fwd, 0f, brakeDeceleration * Time.fixedDeltaTime);
+                fwd = Mathf.MoveTowards(fwd, 0f, stats.brakeDeceleration * Time.fixedDeltaTime);
             else
             {
-                fwd -= reverseAcceleration * Time.fixedDeltaTime;
-                fwd = Mathf.Max(fwd, -reverseSpeed);
+                fwd -= stats.reverseAcceleration * Time.fixedDeltaTime;
+                fwd = Mathf.Max(fwd, -stats.reverseSpeed);
             }
         }
         else
         {
-            float d = (State == CarState.Drifting) ? drag * driftDragMultiplier : drag;
+            float d = (State == CarState.Drifting) ? stats.drag * stats.driftDragMultiplier : stats.drag;
             fwd = Mathf.MoveTowards(fwd, 0f, d * Time.fixedDeltaTime);
         }
 
@@ -159,7 +145,7 @@ public class Drive : MonoBehaviour
         //движение
         rb.MovePosition(rb.position + velocity * Time.fixedDeltaTime);
 
-        // --- ИСПРАВЛЕНО: данные для отладки ---
+        // --- данные для отладки ---
         currentSpeed = fwd;
         currentLateralSpeed = lat;
         isDrifting = drift;
@@ -181,7 +167,7 @@ public class Drive : MonoBehaviour
         CarState prev = State;
         State = next;
         OnStateChanged?.Invoke(prev, next);
-        if (logStateChanges) Debug.Log($"[Drive] {prev} → {next}");
+        if (stats.logStateChanges) Debug.Log($"[Drive] {prev} → {next}");
     }
 
     void ApplyParams()
@@ -189,24 +175,25 @@ public class Drive : MonoBehaviour
         switch (State)
         {
             case CarState.Boosting:
-                speedLimit = moveSpeed * boostSpeedMultiplier;
-                grip = normalGrip; turnBoost = 1f; break;
+                speedLimit = stats.moveSpeed * stats.boostSpeedMultiplier;
+                grip = stats.normalGrip; turnBoost = 1f; break;
             case CarState.Drifting:
-                speedLimit = moveSpeed;
-                grip = driftGrip; turnBoost = driftTurnBoost; break;
+                speedLimit = stats.moveSpeed;
+                grip = stats.driftGrip; turnBoost = stats.driftTurnBoost; break;
             case CarState.Reverse:
-                speedLimit = reverseSpeed;
-                grip = normalGrip; turnBoost = 1f; break;
+                speedLimit = stats.reverseSpeed;
+                grip = stats.normalGrip; turnBoost = 1f; break;
             default:
-                speedLimit = moveSpeed;
-                grip = normalGrip; turnBoost = 1f; break;
+                speedLimit = stats.moveSpeed;
+                grip = stats.normalGrip; turnBoost = 1f; break;
         }
     }
 
     public void ApplyBoost(float duration = -1f)
     {
-        boostTimer = (duration > 0f) ? duration : boostDuration;
-        velocity += (Vector2)rb.transform.up * boostImpulse;
+        if (stats == null) return;
+        boostTimer = (duration > 0f) ? duration : stats.boostDuration;
+        velocity += (Vector2)rb.transform.up * stats.boostImpulse;
     }
 
     void OnCollisionEnter2D(Collision2D col)
@@ -226,15 +213,15 @@ public class Drive : MonoBehaviour
 
     void OnGUI()
     {
-        if (!showStateOnScreen) return;
+        if (stats == null || !stats.showStateOnScreen) return;
 
         var style = new GUIStyle(GUI.skin.label)
         {
-            fontSize = stateLabelFontSize,
+            fontSize = stats.stateLabelFontSize,
             fontStyle = FontStyle.Bold,
         };
         GUI.Label(
-            new Rect(stateLabelPosition.x, stateLabelPosition.y, 300, 50),
+            new Rect(stats.stateLabelPosition.x, stats.stateLabelPosition.y, 300, 50),
             State.ToString(),
             style);
     }
