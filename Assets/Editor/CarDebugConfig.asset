@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CarDebugConfig
   m_EditorClassIdentifier: Assembly-CSharp-Editor::CarDebugConfig
   moveSpeed: 20
-  acceleration: 12
+  acceleration: 10
   turnSpeed: 120
-  normalGrip: 13
+  normalGrip: 12
   driftGrip: 1.5
