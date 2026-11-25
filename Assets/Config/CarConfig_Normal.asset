@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6b0daac91975714d91ba160cbe95206, type: 3}
   m_Name: CarConfig_Normal
   m_EditorClassIdentifier: Assembly-CSharp::CarStats
-  moveSpeed: 34
+  moveSpeed: 20
   reverseSpeed: 7
   acceleration: 12
   reverseAcceleration: 8
   brakeDeceleration: 20
   drag: 2
-  turnSpeed: 60
+  turnSpeed: 120
   driftTurnBoost: 1.5
   minTurnSpeed: 0.3
   rwdOversteer: 60

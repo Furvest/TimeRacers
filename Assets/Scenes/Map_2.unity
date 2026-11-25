@@ -3969,27 +3969,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3decf2a55ad85244a2d970e4b19263a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Drive
-  moveSpeed: 20
-  reverseSpeed: 7
-  acceleration: 12
-  reverseAcceleration: 8
-  brakeDeceleration: 20
-  drag: 2
-  turnSpeed: 120
-  driftTurnBoost: 1
-  minTurnSpeed: 1
-  rwdOversteer: 45
-  normalGrip: 13
-  driftGrip: 1.5
-  driftDragMultiplier: 0.3
-  boostDuration: 2
-  boostSpeedMultiplier: 1.5
-  boostAccelerationMultiplier: 2
-  boostImpulse: 4
-  showStateOnScreen: 1
-  stateLabelPosition: {x: 220, y: 20}
-  stateLabelFontSize: 28
-  logStateChanges: 1
+  stats: {fileID: 11400000, guid: a4467eea9dbf5a24e8c664663d4044d6, type: 2}
   currentSpeed: 0
   currentLateralSpeed: 0
   isDrifting: 0

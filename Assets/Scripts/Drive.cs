@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public enum CarState { Stopped, Normal, Drifting, Boosting, Reverse, Paradox }
-
 [RequireComponent(typeof(Rigidbody2D))]
 public class Drive : MonoBehaviour
 {
@@ -12,8 +10,6 @@ public class Drive : MonoBehaviour
     public CarStats Stats => stats;
     
     public bool InputEnabled { get; set; } = true;
-    public CarState State { get; private set; } = CarState.Stopped;
-    public event System.Action<CarState, CarState> OnStateChanged;
 
     [Header("Отладочная информация (только чтение)")]
     [SerializeField] private float currentSpeed;
@@ -29,11 +25,14 @@ public class Drive : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 velocity;
     
-    // Переменные состояния (вычисляются на лету)
+    // Переменные состояния
     private float boostTimer;
     private float speedLimit, grip, turnBoost;
     private bool isTouchingWall = false;
     private Vector2 wallNormal;
+    
+    // Наш FSM
+    private CarStateMachine fsm;
 
     void Awake()
     {
@@ -54,6 +53,16 @@ public class Drive : MonoBehaviour
         speedLimit = stats.moveSpeed; 
         grip = stats.normalGrip; 
         turnBoost = 1f;
+        
+        // Инициализируем FSM
+        fsm = new CarStateMachine();
+        fsm.OnStateChanged += HandleStateChanged;
+    }
+
+    private void HandleStateChanged(CarState oldState, CarState newState)
+    {
+        if (stats.logStateChanges) 
+            Debug.Log($"[Drive] {oldState} → {newState}");
     }
 
     void OnEnable()  { if (controls != null) controls.Car.Enable(); }
@@ -67,7 +76,7 @@ public class Drive : MonoBehaviour
         if (!InputEnabled)
         {
             velocity = Vector2.zero; 
-            SetState(CarState.Stopped);
+            fsm.ChangeState(CarState.Stopped); // ИСПРАВЛЕНО ТУТ
             return;
         }
 
@@ -78,7 +87,9 @@ public class Drive : MonoBehaviour
 
         if (boostTimer > 0f) boostTimer -= Time.fixedDeltaTime;
 
-        SetState(DetermineState(move, drift));
+        // Работа с FSM
+        CarState desiredState = DetermineDesiredState(move, drift);
+        fsm.ChangeState(desiredState);
         ApplyParams();
 
         //оси машины
@@ -100,7 +111,7 @@ public class Drive : MonoBehaviour
         rb.MoveRotation(rb.rotation + turnAmount);
 
         //продольная составляющая (разгон/тормоз/задний ход)
-        float currentAccel = (State == CarState.Boosting)
+        float currentAccel = (fsm.CurrentState == CarState.Boosting)
             ? stats.acceleration * stats.boostAccelerationMultiplier
             : stats.acceleration;
 
@@ -121,7 +132,7 @@ public class Drive : MonoBehaviour
         }
         else
         {
-            float d = (State == CarState.Drifting) ? stats.drag * stats.driftDragMultiplier : stats.drag;
+            float d = (fsm.CurrentState == CarState.Drifting) ? stats.drag * stats.driftDragMultiplier : stats.drag;
             fwd = Mathf.MoveTowards(fwd, 0f, d * Time.fixedDeltaTime);
         }
 
@@ -151,9 +162,9 @@ public class Drive : MonoBehaviour
         isDrifting = drift;
     }
 
-    CarState DetermineState(float move, bool drift)
+    private CarState DetermineDesiredState(float move, bool drift)
     {
-        if (State == CarState.Paradox) return CarState.Paradox;
+        if (fsm.CurrentState == CarState.Paradox) return CarState.Paradox;
         if (boostTimer > 0f) return CarState.Boosting;
         if (drift && velocity.sqrMagnitude > 0.5f) return CarState.Drifting;
         if (velocity.sqrMagnitude < 0.01f && Mathf.Abs(move) < 0.1f) return CarState.Stopped;
@@ -161,18 +172,9 @@ public class Drive : MonoBehaviour
         return CarState.Normal;
     }
 
-    void SetState(CarState next)
-    {
-        if (next == State) return;
-        CarState prev = State;
-        State = next;
-        OnStateChanged?.Invoke(prev, next);
-        if (stats.logStateChanges) Debug.Log($"[Drive] {prev} → {next}");
-    }
-
     void ApplyParams()
     {
-        switch (State)
+        switch (fsm.CurrentState)
         {
             case CarState.Boosting:
                 speedLimit = stats.moveSpeed * stats.boostSpeedMultiplier;
@@ -194,6 +196,9 @@ public class Drive : MonoBehaviour
         if (stats == null) return;
         boostTimer = (duration > 0f) ? duration : stats.boostDuration;
         velocity += (Vector2)rb.transform.up * stats.boostImpulse;
+        
+        // Мгновенно переключаем FSM, чтобы не ждать следующего кадра
+        fsm.ChangeState(CarState.Boosting);
     }
 
     void OnCollisionEnter2D(Collision2D col)
@@ -222,7 +227,7 @@ public class Drive : MonoBehaviour
         };
         GUI.Label(
             new Rect(stats.stateLabelPosition.x, stats.stateLabelPosition.y, 300, 50),
-            State.ToString(),
+            fsm.CurrentState.ToString(),
             style);
     }
 
